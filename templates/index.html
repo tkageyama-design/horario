@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
 
 <meta charset="UTF-8">
@@ -21,156 +20,180 @@
 
 <h2>Controle de Jornada</h2>
 
-<form method="POST" id="formHorario">
-
 <label>Entrada</label>
-<input type="time" name="entrada" value="{{entrada}}" required>
+<input type="time" id="entrada">
 
 <label>Saída para almoço</label>
-<input type="time" id="saida_almoco" name="saida_almoco" value="{{saida_almoco}}" required>
+<input type="time" id="saidaAlmoco">
 
 <label>Retorno do almoço</label>
-<input type="time" id="retorno_almoco" name="retorno_almoco" value="{{retorno_almoco}}" required>
+<input type="time" id="retornoAlmoco">
+
+<label>Saída prevista</label>
+<input type="time" id="saidaPrevista" readonly>
 
 <label>Saída real</label>
-<input type="time" name="saida_real" value="{{saida_real}}">
+<input type="time" id="saidaReal">
 
-<div class="botoes">
+<button onclick="calcular()">Calcular</button>
+<button onclick="limparCampos()" class="limpar">Limpar</button>
 
-<button type="submit">Calcular</button>
+<div class="resultado">
 
-<button type="button" onclick="limparFormulario()">Limpar campos</button>
+<p>Horas trabalhadas: <span id="horasTrabalhadas">--:--</span></p>
 
-</div>
-
-</form>
-
-{% if saida_prevista %}
-
-<div class="resultados">
-
-<p><strong>Saída prevista:</strong> {{saida_prevista}}</p>
-<p><strong>Horas trabalhadas:</strong> {{horas_trabalhadas}}</p>
-<p><strong>Horas restantes:</strong> {{horas_restantes}}</p>
-
-{% if horas_extras %}
-<p><strong>Horas extras:</strong> {{horas_extras}}</p>
-{% endif %}
+<p>Horas extras: <span id="horasExtras">--:--</span></p>
 
 </div>
 
-<div class="progressoExpediente">
-
-<div class="barraProgresso">
-
-<div class="barraPreenchida" id="barraPreenchida"></div>
-
+<div class="progress-container">
+<div id="progressBar"></div>
 </div>
 
-<p id="textoProgresso"></p>
+<p id="percentual">0%</p>
 
 </div>
 
 <script>
 
-function calcularProgresso(){
+function paraMinutos(hora){
 
-let horas="{{horas_trabalhadas}}".split(":")[0];
-let minutos="{{horas_trabalhadas}}".split(":")[1];
-
-let total=(parseInt(horas)*60)+parseInt(minutos);
-
-let porcentagem=(total/(8*60))*100;
-
-if(porcentagem>100){
-porcentagem=100;
-}
-
-let barra=document.getElementById("barraPreenchida");
-
-barra.style.width=porcentagem+"%";
-
-if(porcentagem<50){
-barra.style.background="#95a5a6";
-}
-
-else if(porcentagem<75){
-barra.style.background="#f1c40f";
-}
-
-else if(porcentagem<100){
-barra.style.background="#e67e22";
-}
-
-else{
-barra.style.background="#2ecc71";
-}
-
-document.getElementById("textoProgresso").innerText=
-porcentagem.toFixed(1)+"% do expediente concluído";
+let partes = hora.split(":")
+return parseInt(partes[0])*60 + parseInt(partes[1])
 
 }
 
-calcularProgresso();
+function paraHora(min){
 
-</script>
+let h = Math.floor(min/60)
+let m = min%60
 
-{% endif %}
+return String(h).padStart(2,'0') + ":" + String(m).padStart(2,'0')
 
-<h3>Histórico</h3>
+}
 
-<table>
+function calcular(){
 
-<tr>
-<th>Entrada</th>
-<th>Saída almoço</th>
-<th>Retorno</th>
-<th>Saída prevista</th>
-<th>Saída real</th>
-<th>Extras</th>
-</tr>
+let entrada = document.getElementById("entrada").value
+let saidaAlmoco = document.getElementById("saidaAlmoco").value
+let retornoAlmoco = document.getElementById("retornoAlmoco").value
+let saidaReal = document.getElementById("saidaReal").value
 
-{% for item in historico %}
+if(!entrada || !saidaAlmoco || !retornoAlmoco) return
 
-<tr>
-<td>{{item.entrada}}</td>
-<td>{{item.saida_almoco}}</td>
-<td>{{item.retorno_almoco}}</td>
-<td>{{item.saida_prevista}}</td>
-<td>{{item.saida_real}}</td>
-<td>{{item.extras}}</td>
-</tr>
+let mEntrada = paraMinutos(entrada)
+let mSaidaAlmoco = paraMinutos(saidaAlmoco)
+let mRetornoAlmoco = paraMinutos(retornoAlmoco)
 
-{% endfor %}
+let almoco = mRetornoAlmoco - mSaidaAlmoco
 
-</table>
+if(almoco < 60){
 
-<a class="limpar" href="/limpar">Limpar histórico</a>
+let campo = document.getElementById("retornoAlmoco")
 
-</div>
+campo.classList.add("alerta")
 
-<script>
+setTimeout(()=>campo.classList.remove("alerta"),1200)
 
-function limparFormulario(){
+}else{
 
-document.querySelectorAll("input").forEach(i=>i.value="");
+document.getElementById("retornoAlmoco").classList.remove("alerta")
+
+}
+
+let saidaPrevistaMin = mEntrada + 480 + almoco
+
+document.getElementById("saidaPrevista").value = paraHora(saidaPrevistaMin)
+
+let trabalhado = (mSaidaAlmoco - mEntrada) + (mRetornoAlmoco - mSaidaAlmoco)
+
+document.getElementById("horasTrabalhadas").innerText = paraHora(trabalhado)
+
+if(saidaReal){
+
+let mSaidaReal = paraMinutos(saidaReal)
+
+let extra = mSaidaReal - saidaPrevistaMin
+
+if(extra > 0){
+
+document.getElementById("horasExtras").innerText = paraHora(extra)
+
+}else{
+
+document.getElementById("horasExtras").innerText = "00:00"
+
+}
+
+}
+
+}
+
+function atualizarProgresso(){
+
+let entrada = document.getElementById("entrada").value
+let saidaPrevista = document.getElementById("saidaPrevista").value
+
+if(!entrada || !saidaPrevista) return
+
+let agora = new Date()
+
+let agoraMin = agora.getHours()*60 + agora.getMinutes()
+
+let inicio = paraMinutos(entrada)
+let fim = paraMinutos(saidaPrevista)
+
+let progresso = ((agoraMin - inicio)/(fim - inicio))*100
+
+if(progresso < 0) progresso = 0
+if(progresso > 100) progresso = 100
+
+let barra = document.getElementById("progressBar")
+
+barra.style.width = progresso + "%"
+
+if(progresso >= 100){
+
+barra.style.background = "#2ecc71"
+
+}
+
+document.getElementById("percentual").innerText = Math.floor(progresso) + "%"
+
+}
+
+setInterval(atualizarProgresso,60000)
+
+function limparCampos(){
+
+document.getElementById("entrada").value=""
+document.getElementById("saidaAlmoco").value=""
+document.getElementById("retornoAlmoco").value=""
+document.getElementById("saidaPrevista").value=""
+document.getElementById("saidaReal").value=""
+
+document.getElementById("horasTrabalhadas").innerText="--:--"
+document.getElementById("horasExtras").innerText="--:--"
+
+document.getElementById("progressBar").style.width="0%"
+
+document.getElementById("percentual").innerText="0%"
 
 }
 
 function atualizarRelogio(){
 
-let agora=new Date();
+let agora = new Date()
 
-let horas=agora.getHours().toString().padStart(2,'0');
-let minutos=agora.getMinutes().toString().padStart(2,'0');
-let segundos=agora.getSeconds().toString().padStart(2,'0');
+let h = String(agora.getHours()).padStart(2,'0')
+let m = String(agora.getMinutes()).padStart(2,'0')
+let s = String(agora.getSeconds()).padStart(2,'0')
 
-document.getElementById("relogio").innerText=
-horas+":"+minutos+":"+segundos;
+document.getElementById("relogio").innerText = h + ":" + m + ":" + s
 
 }
 
-setInterval(atualizarRelogio,1000);
+setInterval(atualizarRelogio,1000)
 
 </script>
 
