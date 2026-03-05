@@ -11,35 +11,6 @@
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-<style>
-
-@keyframes alertaAlmoco {
-0% { background-color:#fff; }
-50% { background-color:#ffd6d6; }
-100% { background-color:#fff; }
-}
-
-.alerta{
-animation: alertaAlmoco 1.2s ease-in-out infinite;
-border:1px solid #e74c3c;
-}
-
-.botoes{
-display:flex;
-gap:10px;
-margin-top:10px;
-}
-
-.limparCampos{
-background:#7f8c8d;
-}
-
-.limparCampos:hover{
-background:#626e70;
-}
-
-</style>
-
 </head>
 
 <body>
@@ -61,27 +32,88 @@ background:#626e70;
 <label>Retorno do almoço</label>
 <input type="time" id="retorno_almoco" name="retorno_almoco" value="{{retorno_almoco}}" required>
 
+<label>Saída real</label>
+<input type="time" name="saida_real" value="{{saida_real}}">
+
 <div class="botoes">
 
-<button type="submit">Calcular saída</button>
+<button type="submit">Calcular</button>
 
-<button type="button" class="limparCampos" onclick="limparFormulario()">Limpar campos</button>
+<button type="button" onclick="limparFormulario()">Limpar campos</button>
 
 </div>
 
 </form>
 
-{% if saida %}
+{% if saida_prevista %}
 
 <div class="resultados">
 
-<p><strong>Saída prevista:</strong> {{saida}}</p>
-
+<p><strong>Saída prevista:</strong> {{saida_prevista}}</p>
 <p><strong>Horas trabalhadas:</strong> {{horas_trabalhadas}}</p>
-
 <p><strong>Horas restantes:</strong> {{horas_restantes}}</p>
 
+{% if horas_extras %}
+<p><strong>Horas extras:</strong> {{horas_extras}}</p>
+{% endif %}
+
 </div>
+
+<div class="progressoExpediente">
+
+<div class="barraProgresso">
+
+<div class="barraPreenchida" id="barraPreenchida"></div>
+
+</div>
+
+<p id="textoProgresso"></p>
+
+</div>
+
+<script>
+
+function calcularProgresso(){
+
+let horas="{{horas_trabalhadas}}".split(":")[0];
+let minutos="{{horas_trabalhadas}}".split(":")[1];
+
+let total=(parseInt(horas)*60)+parseInt(minutos);
+
+let porcentagem=(total/(8*60))*100;
+
+if(porcentagem>100){
+porcentagem=100;
+}
+
+let barra=document.getElementById("barraPreenchida");
+
+barra.style.width=porcentagem+"%";
+
+if(porcentagem<50){
+barra.style.background="#95a5a6";
+}
+
+else if(porcentagem<75){
+barra.style.background="#f1c40f";
+}
+
+else if(porcentagem<100){
+barra.style.background="#e67e22";
+}
+
+else{
+barra.style.background="#2ecc71";
+}
+
+document.getElementById("textoProgresso").innerText=
+porcentagem.toFixed(1)+"% do expediente concluído";
+
+}
+
+calcularProgresso();
+
+</script>
 
 {% endif %}
 
@@ -93,7 +125,9 @@ background:#626e70;
 <th>Entrada</th>
 <th>Saída almoço</th>
 <th>Retorno</th>
-<th>Saída</th>
+<th>Saída prevista</th>
+<th>Saída real</th>
+<th>Extras</th>
 </tr>
 
 {% for item in historico %}
@@ -102,7 +136,9 @@ background:#626e70;
 <td>{{item.entrada}}</td>
 <td>{{item.saida_almoco}}</td>
 <td>{{item.retorno_almoco}}</td>
-<td>{{item.saida}}</td>
+<td>{{item.saida_prevista}}</td>
+<td>{{item.saida_real}}</td>
+<td>{{item.extras}}</td>
 </tr>
 
 {% endfor %}
@@ -115,46 +151,11 @@ background:#626e70;
 
 <script>
 
-function validarAlmoco(){
-
-let saida = document.getElementById("saida_almoco").value;
-let retornoCampo = document.getElementById("retorno_almoco");
-
-if(!saida || !retornoCampo.value){
-retornoCampo.classList.remove("alerta");
-return;
-}
-
-let s = new Date("1970-01-01T" + saida);
-let r = new Date("1970-01-01T" + retornoCampo.value);
-
-let diff = (r - s) / 60000;
-
-if(diff < 60){
-retornoCampo.classList.add("alerta");
-}else{
-retornoCampo.classList.remove("alerta");
-}
-
-}
-
 function limparFormulario(){
 
-document.querySelector('input[name="entrada"]').value="";
-document.querySelector('input[name="saida_almoco"]').value="";
-document.querySelector('input[name="retorno_almoco"]').value="";
-
-document.getElementById("retorno_almoco").classList.remove("alerta");
-
-let resultados=document.querySelector(".resultados");
-if(resultados){
-resultados.remove();
-}
+document.querySelectorAll("input").forEach(i=>i.value="");
 
 }
-
-document.getElementById("saida_almoco").addEventListener("change", validarAlmoco);
-document.getElementById("retorno_almoco").addEventListener("change", validarAlmoco);
 
 function atualizarRelogio(){
 
@@ -164,14 +165,12 @@ let horas=agora.getHours().toString().padStart(2,'0');
 let minutos=agora.getMinutes().toString().padStart(2,'0');
 let segundos=agora.getSeconds().toString().padStart(2,'0');
 
-document.getElementById("relogio").innerText =
+document.getElementById("relogio").innerText=
 horas+":"+minutos+":"+segundos;
 
 }
 
 setInterval(atualizarRelogio,1000);
-
-atualizarRelogio();
 
 </script>
 
