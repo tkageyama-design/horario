@@ -145,7 +145,9 @@ retornoCampo.classList.remove("alerta");
 
 function limparFormulario(){
 
-document.getElementById("formHorario").reset();
+document.querySelector('input[name="entrada"]').value = "";
+document.querySelector('input[name="saida_almoco"]').value = "";
+document.querySelector('input[name="retorno_almoco"]').value = "";
 
 document.getElementById("retorno_almoco").classList.remove("alerta");
 
