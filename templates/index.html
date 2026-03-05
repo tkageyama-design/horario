@@ -8,18 +8,15 @@
 
 <title>Controle de Jornada</title>
 
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
 <style>
 
 @keyframes alertaAlmoco {
-
 0% { background-color:#fff; }
-
 50% { background-color:#ffd6d6; }
-
 100% { background-color:#fff; }
-
 }
 
 .alerta{
@@ -48,6 +45,8 @@ background:#626e70;
 <body>
 
 <div class="container">
+
+<div class="relogio" id="relogio"></div>
 
 <h2>Controle de Jornada</h2>
 
@@ -132,29 +131,47 @@ let r = new Date("1970-01-01T" + retornoCampo.value);
 let diff = (r - s) / 60000;
 
 if(diff < 60){
-
 retornoCampo.classList.add("alerta");
-
 }else{
-
 retornoCampo.classList.remove("alerta");
-
 }
 
 }
 
 function limparFormulario(){
 
-document.querySelector('input[name="entrada"]').value = "";
-document.querySelector('input[name="saida_almoco"]').value = "";
-document.querySelector('input[name="retorno_almoco"]').value = "";
+document.querySelector('input[name="entrada"]').value="";
+document.querySelector('input[name="saida_almoco"]').value="";
+document.querySelector('input[name="retorno_almoco"]').value="";
 
 document.getElementById("retorno_almoco").classList.remove("alerta");
+
+let resultados=document.querySelector(".resultados");
+if(resultados){
+resultados.remove();
+}
 
 }
 
 document.getElementById("saida_almoco").addEventListener("change", validarAlmoco);
 document.getElementById("retorno_almoco").addEventListener("change", validarAlmoco);
+
+function atualizarRelogio(){
+
+let agora=new Date();
+
+let horas=agora.getHours().toString().padStart(2,'0');
+let minutos=agora.getMinutes().toString().padStart(2,'0');
+let segundos=agora.getSeconds().toString().padStart(2,'0');
+
+document.getElementById("relogio").innerText =
+horas+":"+minutos+":"+segundos;
+
+}
+
+setInterval(atualizarRelogio,1000);
+
+atualizarRelogio();
 
 </script>
 
