@@ -28,8 +28,16 @@ def index():
 
         saida = saida_final.strftime("%H:%M")
 
-    return render_template("index.html", saida=saida)
-
+return render_template(
+    "index.html",
+    saida=saida,
+    horas_trabalhadas=horas_trabalhadas,
+    horas_restantes=horas_restantes,
+    historico=historico,
+    entrada=entrada if request.method=="POST" else "",
+    saida_almoco=saida_almoco if request.method=="POST" else "",
+    retorno_almoco=retorno_almoco if request.method=="POST" else ""
+)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
