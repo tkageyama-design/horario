@@ -1,13 +1,21 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET", "POST"])
+historico = []
+
+@app.route("/", methods=["GET","POST"])
 def index():
 
     saida = None
+    horas_trabalhadas = None
+    horas_restantes = None
+
+    entrada = ""
+    saida_almoco = ""
+    retorno_almoco = ""
 
     if request.method == "POST":
 
@@ -17,28 +25,49 @@ def index():
 
         fmt = "%H:%M"
 
-        entrada = datetime.strptime(entrada, fmt)
-        saida_almoco = datetime.strptime(saida_almoco, fmt)
-        retorno_almoco = datetime.strptime(retorno_almoco, fmt)
+        entrada_dt = datetime.strptime(entrada, fmt)
+        saida_almoco_dt = datetime.strptime(saida_almoco, fmt)
+        retorno_almoco_dt = datetime.strptime(retorno_almoco, fmt)
 
-        tempo_almoco = retorno_almoco - saida_almoco
         jornada = timedelta(hours=8)
 
-        saida_final = entrada + jornada + tempo_almoco
+        tempo_trabalhado = saida_almoco_dt - entrada_dt
+        tempo_almoco = retorno_almoco_dt - saida_almoco_dt
+
+        horas_restantes_td = jornada - tempo_trabalhado
+
+        saida_final = retorno_almoco_dt + horas_restantes_td
 
         saida = saida_final.strftime("%H:%M")
 
-return render_template(
-    "index.html",
-    saida=saida,
-    horas_trabalhadas=horas_trabalhadas,
-    horas_restantes=horas_restantes,
-    historico=historico,
-    entrada=entrada if request.method=="POST" else "",
-    saida_almoco=saida_almoco if request.method=="POST" else "",
-    retorno_almoco=retorno_almoco if request.method=="POST" else ""
-)
+        horas_trabalhadas = str(tempo_trabalhado)[:-3]
+        horas_restantes = str(horas_restantes_td)[:-3]
+
+        historico.insert(0,{
+            "entrada":entrada,
+            "saida_almoco":saida_almoco,
+            "retorno_almoco":retorno_almoco,
+            "saida":saida
+        })
+
+    return render_template(
+        "index.html",
+        saida=saida,
+        horas_trabalhadas=horas_trabalhadas,
+        horas_restantes=horas_restantes,
+        historico=historico,
+        entrada=entrada,
+        saida_almoco=saida_almoco,
+        retorno_almoco=retorno_almoco
+    )
+
+
+@app.route("/limpar")
+def limpar():
+    historico.clear()
+    return redirect("/")
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT",5000))
+    app.run(host="0.0.0.0",port=port)
