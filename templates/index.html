@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+<meta charset="UTF-8">
+<title>Calculadora de Saída</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Calculadora de Saída</h2>
+
+<form method="POST">
+
+<label>Horário de Entrada</label>
+<input type="time" name="entrada" required>
+
+<label>Saída para Almoço</label>
+<input type="time" name="saida_almoco" required>
+
+<label>Retorno do Almoço</label>
+<input type="time" name="retorno_almoco" required>
+
+<button type="submit">Calcular Saída</button>
+
+</form>
+
+{% if saida %}
+<div class="resultado">
+Saída prevista: <b>{{saida}}</b>
+</div>
+{% endif %}
+
+</div>
+
+</body>
+</html>
