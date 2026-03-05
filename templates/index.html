@@ -10,6 +10,39 @@
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
+<style>
+
+@keyframes alertaAlmoco {
+
+0% { background-color:#fff; }
+
+50% { background-color:#ffd6d6; }
+
+100% { background-color:#fff; }
+
+}
+
+.alerta{
+animation: alertaAlmoco 1.2s ease-in-out infinite;
+border:1px solid #e74c3c;
+}
+
+.botoes{
+display:flex;
+gap:10px;
+margin-top:10px;
+}
+
+.limparCampos{
+background:#7f8c8d;
+}
+
+.limparCampos:hover{
+background:#626e70;
+}
+
+</style>
+
 </head>
 
 <body>
@@ -18,18 +51,24 @@
 
 <h2>Controle de Jornada</h2>
 
-<form method="POST">
+<form method="POST" id="formHorario">
 
 <label>Entrada</label>
-<input type="time" name="entrada" required>
+<input type="time" name="entrada" value="{{entrada}}" required>
 
 <label>Saída para almoço</label>
-<input type="time" id="saida_almoco" name="saida_almoco" required>
+<input type="time" id="saida_almoco" name="saida_almoco" value="{{saida_almoco}}" required>
 
 <label>Retorno do almoço</label>
-<input type="time" id="retorno_almoco" name="retorno_almoco" required>
+<input type="time" id="retorno_almoco" name="retorno_almoco" value="{{retorno_almoco}}" required>
+
+<div class="botoes">
 
 <button type="submit">Calcular saída</button>
+
+<button type="button" class="limparCampos" onclick="limparFormulario()">Limpar campos</button>
+
+</div>
 
 </form>
 
@@ -80,22 +119,35 @@
 function validarAlmoco(){
 
 let saida = document.getElementById("saida_almoco").value;
-let retorno = document.getElementById("retorno_almoco");
+let retornoCampo = document.getElementById("retorno_almoco");
 
-if(!saida || !retorno.value){
+if(!saida || !retornoCampo.value){
+retornoCampo.classList.remove("alerta");
 return;
 }
 
 let s = new Date("1970-01-01T" + saida);
-let r = new Date("1970-01-01T" + retorno.value);
+let r = new Date("1970-01-01T" + retornoCampo.value);
 
 let diff = (r - s) / 60000;
 
 if(diff < 60){
-retorno.style.backgroundColor = "#ffcccc";
+
+retornoCampo.classList.add("alerta");
+
 }else{
-retorno.style.backgroundColor = "";
+
+retornoCampo.classList.remove("alerta");
+
 }
+
+}
+
+function limparFormulario(){
+
+document.getElementById("formHorario").reset();
+
+document.getElementById("retorno_almoco").classList.remove("alerta");
 
 }
 
