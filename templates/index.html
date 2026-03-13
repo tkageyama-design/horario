@@ -1,199 +1,206 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Controle de Jornada</title>
 
-<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6f9;
+padding:40px;
+}
+
+.container{
+background:white;
+padding:30px;
+border-radius:10px;
+width:500px;
+margin:auto;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+h2{
+text-align:center;
+}
+
+input{
+width:100%;
+padding:8px;
+margin-top:5px;
+margin-bottom:15px;
+}
+
+button{
+padding:10px;
+width:100%;
+background:#2c7be5;
+color:white;
+border:none;
+border-radius:5px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.resultado{
+margin-top:20px;
+background:#f1f1f1;
+padding:15px;
+border-radius:5px;
+}
+
+.historico{
+margin-top:30px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:8px;
+text-align:center;
+}
+
+th{
+background:#2c7be5;
+color:white;
+}
+
+</style>
 
 </head>
-
 <body>
 
 <div class="container">
 
-<div class="relogio" id="relogio"></div>
-
 <h2>Controle de Jornada</h2>
 
+<form method="POST">
+
 <label>Entrada</label>
-<input type="time" id="entrada">
+<input type="time" id="entrada" name="entrada" value="{{entrada}}" required>
 
-<label>Saída para almoço</label>
-<input type="time" id="saidaAlmoco">
+<label>Saída para Almoço</label>
+<input type="time" id="saida_almoco" name="saida_almoco" value="{{saida_almoco}}" required>
 
-<label>Retorno do almoço</label>
-<input type="time" id="retornoAlmoco">
+<label>Retorno do Almoço</label>
+<input type="time" id="retorno_almoco" name="retorno_almoco" value="{{retorno_almoco}}" required>
 
-<label>Saída prevista</label>
-<input type="time" id="saidaPrevista" readonly>
+<label>Saída Real</label>
+<input type="time" id="saida_real" name="saida_real" value="{{saida_real}}">
 
-<label>Saída real</label>
-<input type="time" id="saidaReal">
+<button type="submit">Calcular</button>
 
-<button onclick="calcular()">Calcular</button>
-<button onclick="limparCampos()" class="limpar">Limpar</button>
+</form>
 
 <div class="resultado">
 
-<p>Horas trabalhadas: <span id="horasTrabalhadas">--:--</span></p>
+<p><b>Horas Trabalhadas (ao vivo):</b> <span id="horas_trabalhadas">00:00</span></p>
 
-<p>Horas extras: <span id="horasExtras">--:--</span></p>
+<p><b>Horas Restantes:</b> {{horas_restantes}}</p>
+
+<p><b>Saída Prevista:</b> {{saida_prevista}}</p>
+
+<p><b>Horas Extras:</b> {{horas_extras}}</p>
 
 </div>
 
-<div class="progress-container">
-<div id="progressBar"></div>
-</div>
+<div class="historico">
 
-<p id="percentual">0%</p>
+<h3>Histórico</h3>
+
+<table>
+
+<tr>
+<th>Entrada</th>
+<th>Saída Almoço</th>
+<th>Retorno</th>
+<th>Saída Prevista</th>
+<th>Saída Real</th>
+<th>Extras</th>
+</tr>
+
+{% for h in historico %}
+
+<tr>
+<td>{{h.entrada}}</td>
+<td>{{h.saida_almoco}}</td>
+<td>{{h.retorno_almoco}}</td>
+<td>{{h.saida_prevista}}</td>
+<td>{{h.saida_real}}</td>
+<td>{{h.extras}}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+<br>
+
+<a href="/limpar">Limpar histórico</a>
+
+</div>
 
 </div>
 
 <script>
 
-function paraMinutos(hora){
+function formatarTempo(minutos){
 
-let partes = hora.split(":")
-return parseInt(partes[0])*60 + parseInt(partes[1])
+if(minutos<0){minutos=0}
+
+let h=Math.floor(minutos/60)
+let m=Math.floor(minutos%60)
+
+return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0')
+}
+
+function calcularHoras(){
+
+let entrada=document.getElementById("entrada").value
+let saidaAlmoco=document.getElementById("saida_almoco").value
+let retornoAlmoco=document.getElementById("retorno_almoco").value
+
+if(!entrada){
+document.getElementById("horas_trabalhadas").innerText="00:00"
+return
+}
+
+let agora=new Date()
+
+let partesEntrada=entrada.split(":")
+
+let entradaDate=new Date()
+entradaDate.setHours(partesEntrada[0],partesEntrada[1],0)
+
+let minutosTrabalhados=(agora-entradaDate)/60000
+
+if(saidaAlmoco && retornoAlmoco){
+
+let p1=saidaAlmoco.split(":")
+let p2=retornoAlmoco.split(":")
+
+let saidaDate=new Date()
+saidaDate.setHours(p1[0],p1[1],0)
+
+let retornoDate=new Date()
+retornoDate.setHours(p2[0],p2[1],0)
+
+let minutosAlmoco=(retornoDate-saidaDate)/60000
+
+minutosTrabalhados-=minutosAlmoco
+}
+
+document.getElementById("horas_trabalhadas").innerText=formatarTempo(minutosTrabalhados)
 
 }
 
-function paraHora(min){
-
-let h = Math.floor(min/60)
-let m = min%60
-
-return String(h).padStart(2,'0') + ":" + String(m).padStart(2,'0')
-
-}
-
-function calcular(){
-
-let entrada = document.getElementById("entrada").value
-let saidaAlmoco = document.getElementById("saidaAlmoco").value
-let retornoAlmoco = document.getElementById("retornoAlmoco").value
-let saidaReal = document.getElementById("saidaReal").value
-
-if(!entrada || !saidaAlmoco || !retornoAlmoco) return
-
-let mEntrada = paraMinutos(entrada)
-let mSaidaAlmoco = paraMinutos(saidaAlmoco)
-let mRetornoAlmoco = paraMinutos(retornoAlmoco)
-
-let almoco = mRetornoAlmoco - mSaidaAlmoco
-
-if(almoco < 60){
-
-let campo = document.getElementById("retornoAlmoco")
-
-campo.classList.add("alerta")
-
-setTimeout(()=>campo.classList.remove("alerta"),1200)
-
-}else{
-
-document.getElementById("retornoAlmoco").classList.remove("alerta")
-
-}
-
-let saidaPrevistaMin = mEntrada + 480 + almoco
-
-document.getElementById("saidaPrevista").value = paraHora(saidaPrevistaMin)
-
-let trabalhado = (mSaidaAlmoco - mEntrada) + (mRetornoAlmoco - mSaidaAlmoco)
-
-document.getElementById("horasTrabalhadas").innerText = paraHora(trabalhado)
-
-if(saidaReal){
-
-let mSaidaReal = paraMinutos(saidaReal)
-
-let extra = mSaidaReal - saidaPrevistaMin
-
-if(extra > 0){
-
-document.getElementById("horasExtras").innerText = paraHora(extra)
-
-}else{
-
-document.getElementById("horasExtras").innerText = "00:00"
-
-}
-
-}
-
-}
-
-function atualizarProgresso(){
-
-let entrada = document.getElementById("entrada").value
-let saidaPrevista = document.getElementById("saidaPrevista").value
-
-if(!entrada || !saidaPrevista) return
-
-let agora = new Date()
-
-let agoraMin = agora.getHours()*60 + agora.getMinutes()
-
-let inicio = paraMinutos(entrada)
-let fim = paraMinutos(saidaPrevista)
-
-let progresso = ((agoraMin - inicio)/(fim - inicio))*100
-
-if(progresso < 0) progresso = 0
-if(progresso > 100) progresso = 100
-
-let barra = document.getElementById("progressBar")
-
-barra.style.width = progresso + "%"
-
-if(progresso >= 100){
-
-barra.style.background = "#2ecc71"
-
-}
-
-document.getElementById("percentual").innerText = Math.floor(progresso) + "%"
-
-}
-
-setInterval(atualizarProgresso,60000)
-
-function limparCampos(){
-
-document.getElementById("entrada").value=""
-document.getElementById("saidaAlmoco").value=""
-document.getElementById("retornoAlmoco").value=""
-document.getElementById("saidaPrevista").value=""
-document.getElementById("saidaReal").value=""
-
-document.getElementById("horasTrabalhadas").innerText="--:--"
-document.getElementById("horasExtras").innerText="--:--"
-
-document.getElementById("progressBar").style.width="0%"
-
-document.getElementById("percentual").innerText="0%"
-
-}
-
-function atualizarRelogio(){
-
-let agora = new Date()
-
-let h = String(agora.getHours()).padStart(2,'0')
-let m = String(agora.getMinutes()).padStart(2,'0')
-let s = String(agora.getSeconds()).padStart(2,'0')
-
-document.getElementById("relogio").innerText = h + ":" + m + ":" + s
-
-}
-
-setInterval(atualizarRelogio,1000)
+setInterval(calcularHoras,1000)
 
 </script>
 
